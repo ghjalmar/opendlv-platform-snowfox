@@ -293,3 +293,42 @@ services:
         working_dir: /recordings
         command: "--name=basler1.i420 --id=1 --width=2048 --height=1536 --recsuffix=-basler1-lossless --cid=111 --remote"
         runtime: nvidia
+
+    ###########################################################################
+    # BoB.
+    dev-camera-bob2:
+        container_name: dev-camera-bob2
+        image: $DOCKER_IMAGE_DEV_CAMERA_BOB
+        cpuset: "7"
+        restart: always
+        ipc: "host"
+        network_mode: "host"
+        environment:
+        - DISPLAY=$DISPLAY
+        volumes:
+        - /tmp:/tmp
+        cap_add:
+        - SYS_NICE
+        entrypoint: ""
+        command: "nice -n -8 /usr/bin/dlv-device-camera-bob --cid=111 --hostip=192.168.1.1 --bobip=192.168.1.2 --name.i420=bob2.i420 --name.argb=bob2.argb"
+
+    qsv-h264-thumbnail-bob2:
+        container_name: qsv-h264-thumbnail-bob2
+        image: chrberger/video-qsv-h264-encoder:v0.0.4
+        depends_on:
+        - dev-camera-bob2
+        cpuset: "7"
+        devices:
+        - /dev/dri/renderD128
+        restart: always
+        ipc: "host"
+        network_mode: "host"
+        volumes:
+        - /tmp:/tmp
+        cap_add:
+        - SYS_NICE
+        entrypoint: ""
+        command: "nice -n -7 /usr/bin/video-qsv-h264-encoder --cid=110 --name=bob2.i420 --width=1104 --height=624 --id=2 --bitrate=3000 --crop.x=232 --crop.y=72 --crop.width=640 --crop.height=480 --downsample=5"
+        runtime: runc
+
+
